@@ -34,6 +34,14 @@ env.WAYLAND_API_CODE(
 )
 
 env.WAYLAND_API_HEADER(
+    target="protocol/viewporter.gen.h", source="#thirdparty/wayland-protocols/stable/viewporter/viewporter.xml"
+)
+
+env.WAYLAND_API_CODE(
+    target="protocol/viewporter.gen.c", source="#thirdparty/wayland-protocols/stable/viewporter/viewporter.xml"
+)
+
+env.WAYLAND_API_HEADER(
     target="protocol/xdg_decoration.gen.h",
     source="#thirdparty/wayland-protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml",
 )
@@ -83,9 +91,11 @@ env.WAYLAND_API_CODE(
     source="#thirdparty/wayland-protocols/unstable/idle-inhibit/idle-inhibit-unstable-v1.xml",
 )
 
+
 source_files = [
     "protocol/wayland.gen.c",
     "protocol/xdg_shell.gen.c",
+    "protocol/viewporter.gen.c",
     "protocol/xdg_decoration.gen.c",
     "protocol/relative_pointer.gen.c",
     "protocol/pointer_constraints.gen.c",

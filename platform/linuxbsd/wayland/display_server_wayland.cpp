@@ -59,8 +59,15 @@ void DisplayServerWayland::_poll_events_thread(void *p_wls) {
 	while (true) {
 		// Empty the event queue while it's full.
 		while (wl_display_prepare_read(wls->wl_display) != 0) {
-			MutexLock mutex_lock(wls->mutex);
-			wl_display_dispatch_pending(wls->wl_display);
+			wls->last_lock = OS::get_singleton()->get_ticks_usec();
+
+			{
+				wls->mutex.lock();
+				wl_display_dispatch_pending(wls->wl_display);
+				wls->mutex.unlock();
+			}
+
+			print_verbose(vformat("Took %d useconds to dispatch", OS::get_singleton()->get_ticks_usec() - wls->last_lock));
 		}
 
 		if (wl_display_flush(wls->wl_display) == -1) {
@@ -664,6 +671,12 @@ void DisplayServerWayland::_wl_registry_on_global(void *data, struct wl_registry
 		return;
 	}
 
+	if (strcmp(interface, wp_viewporter_interface.name) == 0) {
+		globals.wp_viewporter = (struct wp_viewporter *)wl_registry_bind(wl_registry, name, &wp_viewporter_interface, 1);
+		globals.wp_viewporter_name = name;
+		return;
+	}
+
 	if (strcmp(interface, zxdg_decoration_manager_v1_interface.name) == 0) {
 		globals.xdg_decoration_manager = (struct zxdg_decoration_manager_v1 *)wl_registry_bind(wl_registry, name, &zxdg_decoration_manager_v1_interface, 1);
 		globals.xdg_decoration_manager_name = name;
@@ -727,6 +740,16 @@ void DisplayServerWayland::_wl_registry_on_global_remove(void *data, struct wl_r
 			}
 			ss.wl_data_device = nullptr;
 		}
+	}
+
+	if (name == globals.wp_viewporter_name) {
+		if (globals.wp_viewporter) {
+			wp_viewporter_destroy(globals.wp_viewporter);
+		}
+
+		globals.wp_viewporter = nullptr;
+		globals.wp_viewporter_name = 0;
+		return;
 	}
 
 	if (name == globals.xdg_wm_base_name) {
@@ -1521,6 +1544,11 @@ void DisplayServerWayland::_xdg_surface_on_configure(void *data, struct xdg_surf
 
 	xdg_surface_set_window_geometry(wd->xdg_surface, 0, 0, wd->rect.size.width, wd->rect.size.height);
 
+	if (wd->wp_viewport) {
+		wp_viewport_set_destination(wd->wp_viewport, wd->rect.size.width, wd->rect.size.height);
+		wl_surface_commit(wd->wl_surface);
+	}
+
 	Ref<WaylandWindowRectMessage> msg;
 	msg.instantiate();
 	msg->id = wd->id;
@@ -2060,6 +2088,8 @@ void DisplayServerWayland::show_window(DisplayServer::WindowID p_id) {
 
 			DEBUG_LOG_WAYLAND(vformat("Created popup at %s", wd.rect.position));
 		} else {
+			wd.wp_viewport = wp_viewporter_get_viewport(wls.globals.wp_viewporter, wd.wl_surface);
+
 			wd.xdg_toplevel = xdg_surface_get_toplevel(wd.xdg_surface);
 
 			if (wls.globals.xdg_decoration_manager) {
@@ -2185,6 +2215,10 @@ void DisplayServerWayland::delete_sub_window(DisplayServer::WindowID p_id) {
 
 	if (wd.xdg_surface) {
 		xdg_surface_destroy(wd.xdg_surface);
+	}
+
+	if (wd.wp_viewport) {
+		wp_viewport_destroy(wd.wp_viewport);
 	}
 
 	if (wd.wl_surface) {
@@ -2803,7 +2837,7 @@ Key DisplayServerWayland::keyboard_get_keycode_from_physical(Key p_keycode) cons
 }
 
 void DisplayServerWayland::process_events() {
-	MutexLock mutex_lock(wls.mutex);
+	//MutexLock mutex_lock(wls.mutex);
 
 	int werror = wl_display_get_error(wls.wl_display);
 
@@ -2829,25 +2863,27 @@ void DisplayServerWayland::process_events() {
 			Rect2i rect = winrect_msg->rect;
 			WindowData &wd = wls.windows[id];
 
+			if (wd.visible && wd.rect == rect) {
 #ifdef VULKAN_ENABLED
-			if (wd.visible && wls.context_vulkan) {
-				wls.context_vulkan->window_resize(id, rect.size.width, rect.size.height);
-			}
+				if (wd.visible && wls.context_vulkan) {
+					wls.context_vulkan->window_resize(id, rect.size.width, rect.size.height);
+				}
 #endif
 
 #ifdef GLES3_ENABLED
-			if (wd.visible && wls.gl_manager) {
-				wls.gl_manager->window_resize(id, rect.size.width, rect.size.height);
-			}
+				if (wd.visible && wls.gl_manager) {
+					wls.gl_manager->window_resize(id, rect.size.width, rect.size.height);
+				}
 #endif
-			if (wd.rect_changed_callback.is_valid()) {
-				Variant var_rect = Variant(rect);
-				Variant *arg = &var_rect;
+				if (wd.rect_changed_callback.is_valid()) {
+					Variant var_rect = Variant(rect);
+					Variant *arg = &var_rect;
 
-				Variant ret;
-				Callable::CallError ce;
+					Variant ret;
+					Callable::CallError ce;
 
-				wd.rect_changed_callback.callp((const Variant **)&arg, 1, ret, ce);
+					wd.rect_changed_callback.callp((const Variant **)&arg, 1, ret, ce);
+				}
 			}
 		}
 
@@ -3248,6 +3284,10 @@ DisplayServerWayland::~DisplayServerWayland() {
 
 	if (wls.globals.xdg_decoration_manager) {
 		zxdg_decoration_manager_v1_destroy(wls.globals.xdg_decoration_manager);
+	}
+
+	if (wls.globals.wp_viewporter) {
+		wp_viewporter_destroy(wls.globals.wp_viewporter);
 	}
 
 	if (wls.globals.xdg_wm_base) {

@@ -50,6 +50,7 @@
 #include "protocol/pointer_constraints.gen.h"
 #include "protocol/primary_selection.gen.h"
 #include "protocol/relative_pointer.gen.h"
+#include "protocol/viewporter.gen.h"
 #include "protocol/wayland.gen.h"
 #include "protocol/xdg_decoration.gen.h"
 #include "protocol/xdg_shell.gen.h"
@@ -131,6 +132,9 @@ class DisplayServerWayland : public DisplayServer {
 		struct xdg_wm_base *xdg_wm_base = nullptr;
 		uint32_t xdg_wm_base_name = 0;
 
+		struct wp_viewporter *wp_viewporter = nullptr;
+		uint32_t wp_viewporter_name = 0;
+
 		struct zxdg_decoration_manager_v1 *xdg_decoration_manager = nullptr;
 		uint32_t xdg_decoration_manager_name = 0;
 
@@ -159,6 +163,8 @@ class DisplayServerWayland : public DisplayServer {
 		struct wl_surface *wl_surface = nullptr;
 		struct xdg_surface *xdg_surface = nullptr;
 		struct xdg_toplevel *xdg_toplevel = nullptr;
+
+		struct wp_viewport *wp_viewport = nullptr;
 
 		struct zxdg_toplevel_decoration_v1 *xdg_toplevel_decoration = nullptr;
 
@@ -347,6 +353,8 @@ class DisplayServerWayland : public DisplayServer {
 #ifdef GLES3_ENABLED
 		GLManagerWayland *gl_manager = nullptr;
 #endif
+
+		uint64_t last_lock = 0;
 	};
 
 	WaylandState wls;
