@@ -120,10 +120,6 @@ static void GLAPIENTRY _gl_debug_print(GLenum source, GLenum type, GLuint id, GL
 		return;
 	}
 
-	if (type == _EXT_DEBUG_TYPE_PERFORMANCE_ARB) {
-		return; //these are ultimately annoying, so removing for now
-	}
-
 	char debSource[256], debType[256], debSev[256];
 
 	if (source == _EXT_DEBUG_SOURCE_API_ARB) {
@@ -198,42 +194,26 @@ void RasterizerGLES3::finalize() {
 }
 
 RasterizerGLES3::RasterizerGLES3() {
+#ifdef CAN_DEBUG
 #ifdef GLAD_ENABLED
-	if (!gladLoaderLoadGL()) {
-		ERR_PRINT("Error initializing GLAD");
-		// FIXME this is an early return from a constructor.  Any other code using this instance will crash or the finalizer will crash, because none of
-		// the members of this instance are initialized, so this just makes debugging harder.  It should either crash here intentionally,
-		// or we need to actually test for this situation before constructing this.
-		return;
-	}
-#endif
+	// Note that, with GLAD, platforms are expected to load OpenGL properly
+	// through it before initializing this class, or everything will fail.
 
-#ifdef GLAD_ENABLED
 	if (OS::get_singleton()->is_stdout_verbose()) {
 		if (GLAD_GL_ARB_debug_output) {
+			// Enable debugging.
 			glEnable(_EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
 			glDebugMessageCallbackARB(_gl_debug_print, nullptr);
 			glEnable(_EXT_DEBUG_OUTPUT);
+
+			// Allow only high severity messages.
+			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, GL_DONT_CARE, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
+
+			// But disable performance messages as they're annoying.
+			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_PERFORMANCE_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_FALSE);
 		} else {
 			print_line("OpenGL debugging not supported!");
 		}
-	}
-#endif // GLAD_ENABLED
-
-	// For debugging
-#ifdef CAN_DEBUG
-#ifdef GLES_OVER_GL
-	if (OS::get_singleton()->is_stdout_verbose() && GLAD_GL_ARB_debug_output) {
-		glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_ERROR_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
-		glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
-		glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
-		glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_PORTABILITY_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
-		glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_PERFORMANCE_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
-		glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_OTHER_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
-		//		 glDebugMessageInsertARB(
-		//			GL_DEBUG_SOURCE_API_ARB,
-		//			GL_DEBUG_TYPE_OTHER_ARB, 1,
-		//			GL_DEBUG_SEVERITY_HIGH_ARB, 5, "hello");
 	}
 #else
 	if (OS::get_singleton()->is_stdout_verbose()) {
@@ -249,7 +229,7 @@ RasterizerGLES3::RasterizerGLES3() {
 			glEnable(_EXT_DEBUG_OUTPUT);
 		}
 	}
-#endif // GLES_OVER_GL
+#endif // GLAD_ENABLED
 #endif // CAN_DEBUG
 
 	// OpenGL needs to be initialized before initializing the Rasterizers

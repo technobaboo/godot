@@ -4928,6 +4928,7 @@ DisplayServerX11::DisplayServerX11(const String &p_rendering_driver, WindowMode 
 		}
 	}
 #endif
+
 	if (!driver_found) {
 		r_error = ERR_UNAVAILABLE;
 		ERR_FAIL_MSG("Video driver not found");
@@ -4954,6 +4955,14 @@ DisplayServerX11::DisplayServerX11(const String &p_rendering_driver, WindowMode 
 	show_window(main_window);
 	XSync(x11_display, False);
 	_validate_mode_on_map(main_window);
+
+#ifdef GLES3_ENABLED
+	if (rendering_driver == "opengl3") {
+		if (!gl_manager->load_gl()) {
+			ERR_FAIL_MSG("Can't load OpenGL.");
+		}
+	}
+#endif
 
 #if defined(VULKAN_ENABLED)
 	if (rendering_driver == "vulkan") {
