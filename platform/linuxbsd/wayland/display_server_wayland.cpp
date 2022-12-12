@@ -2493,8 +2493,15 @@ void DisplayServerWayland::window_set_max_size(const Size2i p_size, DisplayServe
 
 	wd.max_size = p_size;
 
-	if (wd.wl_surface && wd.xdg_toplevel) {
-		xdg_toplevel_set_max_size(wd.xdg_toplevel, p_size.width, p_size.height);
+	if (wd.wl_surface) {
+		if (wd.xdg_toplevel) {
+			xdg_toplevel_set_max_size(wd.xdg_toplevel, p_size.width, p_size.height);
+		}
+
+		if (wd.libdecor_frame) {
+			libdecor_frame_set_max_content_size(wd.libdecor_frame, p_size.width, p_size.height);
+		}
+
 		wl_surface_commit(wd.wl_surface);
 	}
 }
@@ -2557,6 +2564,15 @@ void DisplayServerWayland::window_set_size(const Size2i p_size, DisplayServer::W
 	if (wd.xdg_surface) {
 		xdg_surface_set_window_geometry(wd.xdg_surface, 0, 0, wd.rect.size.width, wd.rect.size.height);
 	}
+
+#ifdef LIBDECOR_ENABLED
+	if (wd.libdecor_frame) {
+		struct libdecor_state *state = libdecor_state_new(wd.rect.size.width, wd.rect.size.height);
+		// I'm not sure whether we can just pass null here.
+		libdecor_frame_commit(wd.libdecor_frame, state, nullptr);
+		libdecor_state_free(state);
+	}
+#endif
 
 #ifdef VULKAN_ENABLED
 	if (wd.visible && context_vulkan) {
