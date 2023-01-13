@@ -58,6 +58,7 @@
 #include "protocol/pointer_gestures.gen.h"
 #include "protocol/primary_selection.gen.h"
 #include "protocol/relative_pointer.gen.h"
+#include "protocol/tablet.gen.h"
 #include "protocol/wayland.gen.h"
 #include "protocol/xdg_activation.gen.h"
 #include "protocol/xdg_decoration.gen.h"
@@ -170,6 +171,9 @@ class DisplayServerWayland : public DisplayServer {
 
 		struct zwp_idle_inhibit_manager_v1 *wp_idle_inhibit_manager = nullptr;
 		uint32_t wp_idle_inhibit_manager_name = 0;
+
+		struct zwp_tablet_manager_v2 *wp_tablet_manager = nullptr;
+		uint32_t wp_tablet_manager_name = 0;
 	};
 
 	// This forward declaration is needed due to some circular dependencies.
@@ -353,6 +357,9 @@ class DisplayServerWayland : public DisplayServer {
 		struct zwp_primary_selection_offer_v1 *wp_primary_selection_offer = nullptr;
 
 		Vector<uint8_t> primary_data;
+
+		// Tablet.
+		struct zwp_tablet_seat_v2 *wp_tablet_seat = nullptr;
 	};
 
 	struct CustomWaylandCursor {
@@ -520,6 +527,10 @@ class DisplayServerWayland : public DisplayServer {
 	static void _wp_primary_selection_source_on_send(void *data, struct zwp_primary_selection_source_v1 *wp_primary_selection_source_v1, const char *mime_type, int32_t fd);
 	static void _wp_primary_selection_source_on_cancelled(void *data, struct zwp_primary_selection_source_v1 *wp_primary_selection_source_v1);
 
+	static void _wp_tablet_seat_on_tablet_added(void *data, struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2, struct zwp_tablet_v2 *id);
+	static void _wp_tablet_seat_on_tool_added(void *data, struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2, struct zwp_tablet_tool_v2 *id);
+	static void _wp_tablet_seat_on_pad_added(void *data, struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2, struct zwp_tablet_pad_v2 *id);
+
 	// Wayland event listeners.
 	static constexpr struct wl_registry_listener wl_registry_listener = {
 		.global = _wl_registry_on_global,
@@ -634,6 +645,12 @@ class DisplayServerWayland : public DisplayServer {
 	static constexpr struct zwp_primary_selection_source_v1_listener wp_primary_selection_source_listener = {
 		.send = _wp_primary_selection_source_on_send,
 		.cancelled = _wp_primary_selection_source_on_cancelled,
+	};
+
+	static constexpr struct zwp_tablet_seat_v2_listener wp_tablet_seat_listener = {
+		.tablet_added = _wp_tablet_seat_on_tablet_added,
+		.tool_added = _wp_tablet_seat_on_tool_added,
+		.pad_added = _wp_tablet_seat_on_pad_added,
 	};
 
 #ifdef LIBDECOR_ENABLED

@@ -523,6 +523,12 @@ void DisplayServerWayland::_wl_registry_on_global(void *data, struct wl_registry
 			zwp_primary_selection_device_v1_add_listener(ss->wp_primary_selection_device, &wp_primary_selection_device_listener, ss);
 		}
 
+		if (!ss->wp_tablet_seat && globals.wp_tablet_manager) {
+			// Get this own seat's tablet handle.
+			ss->wp_tablet_seat = zwp_tablet_manager_v2_get_tablet_seat(globals.wp_tablet_manager, ss->wl_seat);
+			zwp_tablet_seat_v2_add_listener(ss->wp_tablet_seat, &wp_tablet_seat_listener, ss);
+		}
+
 		wl_seat_add_listener(ss->wl_seat, &wl_seat_listener, ss);
 		return;
 	}
@@ -566,6 +572,20 @@ void DisplayServerWayland::_wl_registry_on_global(void *data, struct wl_registry
 	if (strcmp(interface, zwp_idle_inhibit_manager_v1_interface.name) == 0) {
 		globals.wp_idle_inhibit_manager = (struct zwp_idle_inhibit_manager_v1 *)wl_registry_bind(wl_registry, name, &zwp_idle_inhibit_manager_v1_interface, 1);
 		globals.wp_idle_inhibit_manager_name = name;
+		return;
+	}
+
+	if (strcmp(interface, zwp_tablet_manager_v2_interface.name) == 0) {
+		globals.wp_tablet_manager = (struct zwp_tablet_manager_v2 *)wl_registry_bind(wl_registry, name, &zwp_tablet_manager_v2_interface, 1);
+		globals.wp_tablet_manager_name = name;
+
+		for (SeatState &ss : wls->seats) {
+			if (ss.wl_seat) {
+				ss.wp_tablet_seat = zwp_tablet_manager_v2_get_tablet_seat(globals.wp_tablet_manager, ss.wl_seat);
+				zwp_tablet_seat_v2_add_listener(ss.wp_tablet_seat, &wp_tablet_seat_listener, &ss);
+			}
+		}
+
 		return;
 	}
 }
@@ -1752,6 +1772,18 @@ void DisplayServerWayland::_wp_primary_selection_source_on_cancelled(void *data,
 		DEBUG_LOG_WAYLAND("Clipboard: primary selection set by another program.");
 		return;
 	}
+}
+
+void DisplayServerWayland::_wp_tablet_seat_on_tablet_added(void *data, struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2, struct zwp_tablet_v2 *id) {
+	DEBUG_LOG_WAYLAND(vformat("wp tablet seat %x on tablet %x added", (size_t)zwp_tablet_seat_v2, (size_t)id));
+}
+
+void DisplayServerWayland::_wp_tablet_seat_on_tool_added(void *data, struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2, struct zwp_tablet_tool_v2 *id) {
+	DEBUG_LOG_WAYLAND(vformat("wp tablet seat %x on tool %x added", (size_t)zwp_tablet_seat_v2, (size_t)id));
+}
+
+void DisplayServerWayland::_wp_tablet_seat_on_pad_added(void *data, struct zwp_tablet_seat_v2 *zwp_tablet_seat_v2, struct zwp_tablet_pad_v2 *id) {
+	DEBUG_LOG_WAYLAND(vformat("wp tablet seat %x on pad %x added", (size_t)zwp_tablet_seat_v2, (size_t)id));
 }
 
 #ifdef LIBDECOR_ENABLED
