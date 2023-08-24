@@ -2346,6 +2346,27 @@ typedef void (*GDExtensionInterfaceEditorAddPlugin)(GDExtensionConstStringNamePt
  */
 typedef void (*GDExtensionInterfaceEditorRemovePlugin)(GDExtensionConstStringNamePtr p_class_name);
 
+/**
+ * @name editor_register_extension_doc
+ * @since 4.2
+ *
+ * Registers an extension's documentation data.
+ *
+ * @param p_library A pointer the library received by the GDExtension's entry point function.
+ * @param p_data A pointer to a String with the XML documentation data.
+ */
+typedef void (*GDExtensionInterfaceEditorRegisterExtensionDoc)(GDExtensionClassLibraryPtr p_library, const char *p_data);
+
+/**
+ * @name editor_unregister_extension_doc
+ * @since 4.2
+ *
+ * Registers an extension's documentation data.
+ *
+ * @param p_library A pointer the library received by the GDExtension's entry point function.
+ */
+typedef void (*GDExtensionInterfaceEditorUnregisterExtensionDoc)(GDExtensionClassLibraryPtr p_library);
+
 #ifdef __cplusplus
 }
 #endif

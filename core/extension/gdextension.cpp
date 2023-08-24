@@ -729,6 +729,7 @@ String GDExtensionResourceLoader::get_resource_type(const String &p_path) const 
 
 #ifdef TOOLS_ENABLED
 Vector<StringName> GDExtensionEditorPlugins::extension_classes;
+HashMap<GDExtensionClassLibraryPtr, String> GDExtensionEditorPlugins::extension_docs;
 GDExtensionEditorPlugins::EditorPluginRegisterFunc GDExtensionEditorPlugins::editor_node_add_plugin = nullptr;
 GDExtensionEditorPlugins::EditorPluginRegisterFunc GDExtensionEditorPlugins::editor_node_remove_plugin = nullptr;
 
@@ -747,4 +748,14 @@ void GDExtensionEditorPlugins::remove_extension_class(const StringName &p_class_
 		extension_classes.erase(p_class_name);
 	}
 }
+
+void GDExtensionEditorPlugins::register_extension_doc(const GDExtensionClassLibraryPtr &p_library, const char *p_data) {
+	extension_docs[p_library] = String();
+	extension_docs[p_library].parse_utf8(p_data);
+}
+
+void GDExtensionEditorPlugins::unregister_extension_doc(const GDExtensionClassLibraryPtr &p_library) {
+	extension_docs.erase(p_library);
+}
+
 #endif // TOOLS_ENABLED

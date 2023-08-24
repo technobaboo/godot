@@ -2337,7 +2337,15 @@ void EditorHelp::_load_doc_thread(void *p_udata) {
 
 void EditorHelp::_gen_doc_thread(void *p_udata) {
 	DocTools compdoc;
+	// Load core docs.
 	compdoc.load_compressed(_doc_data_compressed, _doc_data_compressed_size, _doc_data_uncompressed_size);
+
+	// Load user-registered extension docs.
+	const HashMap<GDExtensionClassLibraryPtr, String> &ext_docs = GDExtensionEditorPlugins::get_extension_docs();
+	for (const KeyValue<GDExtensionClassLibraryPtr, String> &ext_doc : ext_docs) {
+		compdoc.load_string(ext_doc.value);
+	}
+
 	doc->merge_from(compdoc); // Ensure all is up to date.
 
 	Ref<Resource> cache_res;

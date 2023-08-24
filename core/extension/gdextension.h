@@ -119,6 +119,7 @@ public:
 class GDExtensionEditorPlugins {
 private:
 	static Vector<StringName> extension_classes;
+	static HashMap<GDExtensionClassLibraryPtr, String> extension_docs;
 
 protected:
 	friend class EditorNode;
@@ -133,8 +134,15 @@ public:
 	static void add_extension_class(const StringName &p_class_name);
 	static void remove_extension_class(const StringName &p_class_name);
 
+	static void register_extension_doc(const GDExtensionClassLibraryPtr &p_library, const char *p_data);
+	static void unregister_extension_doc(const GDExtensionClassLibraryPtr &p_library);
+
 	static const Vector<StringName> &get_extension_classes() {
 		return extension_classes;
+	}
+
+	static const HashMap<GDExtensionClassLibraryPtr, String> &get_extension_docs() {
+		return extension_docs;
 	}
 };
 #endif // TOOLS_ENABLED

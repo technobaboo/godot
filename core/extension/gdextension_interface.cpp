@@ -1109,6 +1109,18 @@ static void gdextension_editor_remove_plugin(GDExtensionConstStringNamePtr p_cla
 #endif
 }
 
+static void gdextension_editor_register_extension_doc(GDExtensionClassLibraryPtr p_library, const char *p_data) {
+#ifdef TOOLS_ENABLED
+	GDExtensionEditorPlugins::register_extension_doc(p_library, p_data);
+#endif
+}
+
+static void gdextension_editor_unregister_extension_doc(GDExtensionClassLibraryPtr p_library) {
+#ifdef TOOLS_ENABLED
+	GDExtensionEditorPlugins::unregister_extension_doc(p_library);
+#endif
+}
+
 #define REGISTER_INTERFACE_FUNC(m_name) GDExtension::register_interface_function(#m_name, (GDExtensionInterfaceFunctionPtr)&gdextension_##m_name)
 
 void gdextension_setup_interface() {
@@ -1241,6 +1253,8 @@ void gdextension_setup_interface() {
 	REGISTER_INTERFACE_FUNC(classdb_get_class_tag);
 	REGISTER_INTERFACE_FUNC(editor_add_plugin);
 	REGISTER_INTERFACE_FUNC(editor_remove_plugin);
+	REGISTER_INTERFACE_FUNC(editor_register_extension_doc);
+	REGISTER_INTERFACE_FUNC(editor_unregister_extension_doc);
 }
 
 #undef REGISTER_INTERFACE_FUNCTION
