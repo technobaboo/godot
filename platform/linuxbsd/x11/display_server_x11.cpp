@@ -32,8 +32,8 @@
 
 #ifdef X11_ENABLED
 
-#include "x11/detect_prime_x11.h"
 #include "x11/key_mapping_x11.h"
+#include "x11/prime_x11.h"
 
 #include "core/config/project_settings.h"
 #include "core/math/math_funcs.h"
@@ -5768,7 +5768,7 @@ DisplayServerX11::DisplayServerX11(const String &p_rendering_driver, WindowMode 
 #if defined(GLES3_ENABLED)
 	if (rendering_driver == "opengl3") {
 		if (getenv("DRI_PRIME") == nullptr) {
-			int use_prime = -1;
+			int prime_idx = -1;
 
 			if (getenv("PRIMUS_DISPLAY") ||
 					getenv("PRIMUS_libGLd") ||
@@ -5777,13 +5777,13 @@ DisplayServerX11::DisplayServerX11(const String &p_rendering_driver, WindowMode 
 					getenv("PRIMUS_LOAD_GLOBAL") ||
 					getenv("BUMBLEBEE_SOCKET")) {
 				print_verbose("Optirun/primusrun detected. Skipping GPU detection");
-				use_prime = 0;
+				prime_idx = 0;
 			}
 
 			// Some tools use fake libGL libraries and have them override the real one using
 			// LD_LIBRARY_PATH, so we skip them. *But* Steam also sets LD_LIBRARY_PATH for its
 			// runtime and includes system `/lib` and `/lib64`... so ignore Steam.
-			if (use_prime == -1 && getenv("LD_LIBRARY_PATH") && !getenv("STEAM_RUNTIME_LIBRARY_PATH")) {
+			if (prime_idx == -1 && getenv("LD_LIBRARY_PATH") && !getenv("STEAM_RUNTIME_LIBRARY_PATH")) {
 				String ld_library_path(getenv("LD_LIBRARY_PATH"));
 				Vector<String> libraries = ld_library_path.split(":");
 
@@ -5791,20 +5791,20 @@ DisplayServerX11::DisplayServerX11(const String &p_rendering_driver, WindowMode 
 					if (FileAccess::exists(libraries[i] + "/libGL.so.1") ||
 							FileAccess::exists(libraries[i] + "/libGL.so")) {
 						print_verbose("Custom libGL override detected. Skipping GPU detection");
-						use_prime = 0;
+						prime_idx = 0;
 					}
 				}
 			}
 
-			if (use_prime == -1) {
+			if (prime_idx == -1) {
 				print_verbose("Detecting GPUs, set DRI_PRIME in the environment to override GPU detection logic.");
-				use_prime = detect_prime();
+				prime_idx = PrimeX11().detect_gpu();
 			}
 
-			if (use_prime) {
-				print_line("Found discrete GPU, setting DRI_PRIME=1 to use it.");
+			if (prime_idx) {
+				print_line(vformat("Found discrete GPU, setting DRI_PRIME=%d to use it.", prime_idx));
 				print_line("Note: Set DRI_PRIME=0 in the environment to disable Godot from using the discrete GPU.");
-				setenv("DRI_PRIME", "1", 1);
+				setenv("DRI_PRIME", itos(prime_idx).utf8().get_data(), 1);
 			}
 		}
 

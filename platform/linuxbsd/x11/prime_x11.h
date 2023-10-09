@@ -28,12 +28,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef DETECT_PRIME_X11_H
-#define DETECT_PRIME_X11_H
+#ifndef PRIME_X11_H
+#define PRIME_X11_H
 
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
-int detect_prime();
+#include "prime_linuxbsd.h"
+
+class PrimeX11 : public PrimeLinuxBSD {
+private:
+	virtual Error _create_context();
+	virtual GLProc _get_gl_proc(const char *p_proc);
+};
 
 #endif // X11_ENABLED && GLES3_ENABLED
 
