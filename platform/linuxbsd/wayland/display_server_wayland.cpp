@@ -44,8 +44,8 @@
 #endif
 
 #ifdef GLES3_ENABLED
-#include "detect_prime_egl.h"
 #include "drivers/gles3/rasterizer_gles3.h"
+#include "prime_egl.h"
 #endif
 
 String DisplayServerWayland::_get_app_id_from_context(Context context) {
@@ -1207,7 +1207,7 @@ DisplayServerWayland::DisplayServerWayland(const String &p_rendering_driver, Win
 
 			if (prime_idx == -1) {
 				print_verbose("Detecting GPUs, set DRI_PRIME in the environment to override GPU detection logic.");
-				prime_idx = DetectPrimeEGL::detect_prime();
+				prime_idx = PrimeEGL().detect_gpu();
 			}
 
 			if (prime_idx) {

@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  detect_prime_egl.cpp                                                  */
+/*  prime_linuxbsd.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,27 +28,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifdef GLES3_ENABLED
-#ifdef EGL_ENABLED
+#include "prime_linuxbsd.h"
 
-#include "detect_prime_egl.h"
+#ifdef GLES3_ENABLED
 
 #include "core/string/print_string.h"
-#include "core/string/ustring.h"
+
+#include <thirdparty/glad/glad/gl.h>
 
 #include <stdlib.h>
-
-#ifdef GLAD_ENABLED
-#include "thirdparty/glad/glad/egl.h"
-#include "thirdparty/glad/glad/gl.h"
-#else
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
-#include <GL/glcorearb.h>
-#endif // GLAD_ENABLED
-
-#include <cstring>
-
+#include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -56,70 +45,10 @@
 // To prevent shadowing warnings.
 #undef glGetString
 
-// Runs inside a child. Exiting will not quit the engine.
-void DetectPrimeEGL::create_context() {
-#if defined(GLAD_ENABLED)
-	if (!gladLoaderLoadEGL(nullptr)) {
-		print_verbose("Unable to load EGL, GPU detection skipped.");
-		quick_exit(1);
-	}
-#endif
-
-	EGLDisplay egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-	EGLConfig egl_config;
-	EGLContext egl_context = EGL_NO_CONTEXT;
-
-	eglInitialize(egl_display, NULL, NULL);
-
-#if defined(GLAD_ENABLED)
-	if (!gladLoaderLoadEGL(egl_display)) {
-		print_verbose("Unable to load EGL, GPU detection skipped.");
-		quick_exit(1);
-	}
-#endif
-
-	eglBindAPI(EGL_OPENGL_API);
-
-	EGLint attribs[] = {
-		EGL_RED_SIZE,
-		1,
-		EGL_BLUE_SIZE,
-		1,
-		EGL_GREEN_SIZE,
-		1,
-		EGL_DEPTH_SIZE,
-		24,
-		EGL_NONE,
-	};
-
-	EGLint config_count = 0;
-	eglChooseConfig(egl_display, attribs, &egl_config, 1, &config_count);
-
-	EGLint context_attribs[] = {
-		EGL_CONTEXT_MAJOR_VERSION, 3,
-		EGL_CONTEXT_MINOR_VERSION, 3,
-		EGL_NONE
-	};
-
-	egl_context = eglCreateContext(egl_display, egl_config, EGL_NO_CONTEXT, context_attribs);
-	if (egl_context == EGL_NO_CONTEXT) {
-		print_verbose("Unable to create an EGL context, GPU detection skipped.");
-		quick_exit(1);
-	}
-
-	eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context);
-}
-
-int DetectPrimeEGL::detect_prime() {
+int PrimeLinuxBSD::detect_gpu() {
 	pid_t p;
-	int priorities[4] = {};
-	String vendors[4];
-	String renderers[4];
 
-	for (int i = 0; i < 4; ++i) {
-		vendors[i] = "Unknown";
-		renderers[i] = "Unknown";
-	}
+	Device devices[4] = {};
 
 	for (int i = 0; i < 4; ++i) {
 		int fdset[2];
@@ -148,8 +77,8 @@ int DetectPrimeEGL::detect_prime() {
 				// PIPE_BUF will be delivered in one read() call.
 				// Leave it 'Unknown' otherwise.
 				if (read(fdset[0], string, sizeof(string) - 1) > 0) {
-					vendors[i] = string;
-					renderers[i] = string + strlen(string) + 1;
+					devices[i].vendor = string;
+					devices[i].renderer = string + strlen(string) + 1;
 				}
 			}
 
@@ -166,11 +95,21 @@ int DetectPrimeEGL::detect_prime() {
 
 			close(fdset[0]);
 
-			setenv("DRI_PRIME", itos(i).utf8().ptr(), 1);
+			setenv("DRI_PRIME", itos(i).utf8().get_data(), 1);
 
-			create_context();
+			Error err = _create_context();
 
-			PFNGLGETSTRINGPROC glGetString = (PFNGLGETSTRINGPROC)eglGetProcAddress("glGetString");
+			if (err != OK) {
+				print_verbose("Couldn't create a context, skipping GPU detection.");
+				quick_exit(0);
+			}
+
+			PFNGLGETSTRINGPROC glGetString = (PFNGLGETSTRINGPROC)_get_gl_proc("glGetString");
+			if (glGetString == nullptr) {
+				print_verbose("Couldn't get glGetString method, skipping GPU detection.");
+				quick_exit(0);
+			}
+
 			const char *vendor = (const char *)glGetString(GL_VENDOR);
 			const char *renderer = (const char *)glGetString(GL_RENDERER);
 
@@ -187,10 +126,12 @@ int DetectPrimeEGL::detect_prime() {
 			if (write(fdset[1], string, vendor_len + renderer_len) == -1) {
 				print_verbose("Couldn't write vendor/renderer string.");
 			}
+
 			close(fdset[1]);
 
-			// The function quick_exit() is used because exit() will call destructors on static objects copied by fork().
-			// These objects will be freed anyway when the process finishes execution.
+			// The function quick_exit() is used because exit() will call destructors on
+			// static objects copied by fork(). These objects will be freed anyway when
+			// the process finishes execution.
 			quick_exit(0);
 		}
 	}
@@ -198,34 +139,37 @@ int DetectPrimeEGL::detect_prime() {
 	int preferred = 0;
 	int priority = 0;
 
-	if (vendors[0] == vendors[1]) {
+	// DEBUG
+	if (devices[0].vendor == devices[1].vendor) {
 		print_verbose("Only one GPU found, using default.");
 		return 0;
 	}
 
 	for (int i = 3; i >= 0; --i) {
-		const Vendor *v = vendor_map;
-		while (v->glxvendor) {
-			if (v->glxvendor == vendors[i]) {
-				priorities[i] = v->priority;
+		for (const Vendor &v : vendor_map) {
+			if (v.name == devices[i].vendor) {
+				devices[i].priority = v.priority;
 
-				if (v->priority >= priority) {
-					priority = v->priority;
+				if (v.priority >= priority) {
+					priority = v.priority;
 					preferred = i;
 				}
 			}
-			++v;
 		}
 	}
 
-	print_verbose("Found renderers:");
+	print_verbose("Renderers found:");
 	for (int i = 0; i < 4; ++i) {
-		print_verbose("Renderer " + itos(i) + ": " + renderers[i] + " with priority: " + itos(priorities[i]));
+		print_verbose(vformat("Renderer %d: %s with priority %d", i, devices[i].renderer, devices[i].priority));
 	}
 
-	print_verbose("Using renderer: " + renderers[preferred]);
+	print_verbose(vformat("Using renderer: %s", devices[preferred].renderer));
 	return preferred;
 }
 
-#endif // EGL_ENABLED
+PrimeLinuxBSD::PrimeLinuxBSD() {
+}
+
+PrimeLinuxBSD::~PrimeLinuxBSD() {
+}
 #endif // GLES3_ENABLED

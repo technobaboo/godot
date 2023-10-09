@@ -18,6 +18,10 @@ common_linuxbsd = [
 if env["use_sowrap"]:
     common_linuxbsd.append("xkbcommon-so_wrap.c")
 
+if env["opengl3"]:
+    common_linuxbsd.append("prime_linuxbsd.cpp")
+    common_linuxbsd.append("prime_egl.cpp")
+
 if env["x11"]:
     common_linuxbsd += SConscript("x11/SCsub")
 

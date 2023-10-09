@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  detect_prime_egl.h                                                    */
+/*  prime_egl.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,38 +28,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef DETECT_PRIME_EGL_H
-#define DETECT_PRIME_EGL_H
+#ifndef PRIME_EGL_H
+#define PRIME_EGL_H
 
-#ifdef GLES3_ENABLED
-#ifdef EGL_ENABLED
+#if defined(GLES3_ENABLED) && defined(EGL_ENABLED)
 
-class DetectPrimeEGL {
+#include "prime_linuxbsd.h"
+
+#include "thirdparty/glad/glad/egl.h"
+
+class PrimeEGL : public PrimeLinuxBSD {
 private:
-	struct Vendor {
-		const char *glxvendor = nullptr;
-		int priority = 0;
-	};
-
-	static constexpr Vendor vendor_map[] = {
-		{ "Advanced Micro Devices, Inc.", 30 },
-		{ "AMD", 30 },
-		{ "NVIDIA Corporation", 30 },
-		{ "X.Org", 30 },
-		{ "Intel Open Source Technology Center", 20 },
-		{ "Intel", 20 },
-		{ "nouveau", 10 },
-		{ "Mesa Project", 0 },
-		{ nullptr, 0 }
-	};
-
-	static void create_context();
-
-public:
-	static int detect_prime();
+	Error _create_context();
+	GLProc _get_gl_proc(const char *p_proc);
 };
 
-#endif // GLES3_ENABLED
-#endif // EGL_ENABLED
+#endif // defined(GLES3_ENABLED) && defined(EGL_ENABLED)
 
-#endif // DETECT_PRIME_EGL_H
+#endif // PRIME_EGL_H
