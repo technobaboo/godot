@@ -1375,6 +1375,12 @@ static void gdextension_editor_remove_plugin(GDExtensionConstStringNamePtr p_cla
 #endif
 }
 
+static void gdextension_editor_push_docs(const char *p_data) {
+#ifdef TOOLS_ENABLED
+	GDExtensionEditorPlugins::push_doc_data(p_data);
+#endif
+}
+
 #define REGISTER_INTERFACE_FUNC(m_name) GDExtension::register_interface_function(#m_name, (GDExtensionInterfaceFunctionPtr)&gdextension_##m_name)
 
 void gdextension_setup_interface() {
@@ -1518,6 +1524,7 @@ void gdextension_setup_interface() {
 	REGISTER_INTERFACE_FUNC(classdb_get_class_tag);
 	REGISTER_INTERFACE_FUNC(editor_add_plugin);
 	REGISTER_INTERFACE_FUNC(editor_remove_plugin);
+	REGISTER_INTERFACE_FUNC(editor_push_docs);
 }
 
 #undef REGISTER_INTERFACE_FUNCTION

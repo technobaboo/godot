@@ -1635,3 +1635,17 @@ Error DocTools::load_compressed(const uint8_t *p_data, int p_compressed_size, in
 
 	return OK;
 }
+
+Error DocTools::load_string(const String &p_string) {
+	Vector<uint8_t> data = p_string.to_utf8_buffer();
+
+	Ref<XMLParser> parser = memnew(XMLParser);
+	Error err = parser->open_buffer(data);
+	if (err) {
+		return err;
+	}
+
+	_load(parser);
+
+	return OK;
+}

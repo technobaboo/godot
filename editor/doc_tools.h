@@ -51,6 +51,7 @@ public:
 
 	Error _load(Ref<XMLParser> parser);
 	Error load_compressed(const uint8_t *p_data, int p_compressed_size, int p_uncompressed_size);
+	Error load_string(const String &p_string);
 };
 
 #endif // DOC_TOOLS_H

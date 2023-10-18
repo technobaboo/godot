@@ -2614,6 +2614,18 @@ typedef void (*GDExtensionInterfaceEditorAddPlugin)(GDExtensionConstStringNamePt
  */
 typedef void (*GDExtensionInterfaceEditorRemovePlugin)(GDExtensionConstStringNamePtr p_class_name);
 
+/**
+ * @name editor_push_docs
+ * @since 4.2
+ *
+ * Pushes new documentation data in the editor.
+ *
+ * This should usually be called during initialization as the data will not be instantly parsed.
+ *
+ * @param p_data A pointer to a UTF-8 encoded C string (null terminated).
+ */
+typedef void (*GDExtensionsInterfaceEditorPushDocs)(const char *p_data);
+
 #ifdef __cplusplus
 }
 #endif

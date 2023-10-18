@@ -1153,6 +1153,7 @@ void GDExtension::_untrack_instance(void *p_user_data, void *p_instance) {
 }
 
 Vector<StringName> GDExtensionEditorPlugins::extension_classes;
+List<String> GDExtensionEditorPlugins::doc_data;
 GDExtensionEditorPlugins::EditorPluginRegisterFunc GDExtensionEditorPlugins::editor_node_add_plugin = nullptr;
 GDExtensionEditorPlugins::EditorPluginRegisterFunc GDExtensionEditorPlugins::editor_node_remove_plugin = nullptr;
 
@@ -1171,4 +1172,9 @@ void GDExtensionEditorPlugins::remove_extension_class(const StringName &p_class_
 		extension_classes.erase(p_class_name);
 	}
 }
+
+void GDExtensionEditorPlugins::push_doc_data(const char *p_data) {
+	doc_data.push_back(String::utf8(p_data));
+}
+
 #endif // TOOLS_ENABLED

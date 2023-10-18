@@ -2394,7 +2394,9 @@ void EditorHelp::_load_doc_thread(void *p_udata) {
 
 void EditorHelp::_gen_doc_thread(void *p_udata) {
 	DocTools compdoc;
+	// Load core docs.
 	compdoc.load_compressed(_doc_data_compressed, _doc_data_compressed_size, _doc_data_uncompressed_size);
+
 	doc->merge_from(compdoc); // Ensure all is up to date.
 
 	Ref<Resource> cache_res;
@@ -2445,6 +2447,27 @@ void EditorHelp::generate_doc(bool p_use_cache) {
 		}
 	}
 	OS::get_singleton()->benchmark_end_measure("EditorHelp::generate_doc");
+}
+
+void EditorHelp::_update_ext_docs() {
+	print_line("updating docs");
+
+	List<String> &raw_doc_data = GDExtensionEditorPlugins::get_doc_data();
+
+	List<String>::Element *E = raw_doc_data.back();
+
+	while (E) {
+		DocTools ext_doc;
+		ext_doc.load_string(E->get());
+
+		List<String>::Element *F = E;
+
+		E = E->prev();
+
+		raw_doc_data.erase(F);
+
+		doc->merge_from(ext_doc);
+	}
 }
 
 void EditorHelp::_toggle_scripts_pressed() {
@@ -2594,6 +2617,9 @@ EditorHelp::EditorHelp() {
 	class_desc->set_context_menu_enabled(true);
 
 	class_desc->hide();
+
+	GDExtensionManager::get_singleton()->connect("extension_loaded", callable_mp(this, &EditorHelp::_update_ext_docs));
+	_update_ext_docs();
 }
 
 EditorHelp::~EditorHelp() {

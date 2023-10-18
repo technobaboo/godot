@@ -83,6 +83,7 @@ GDExtensionManager::LoadStatus GDExtensionManager::load_extension(const String &
 	}
 
 	gdextension_map[p_path] = extension;
+	emit_signal("extension_loaded");
 	return LOAD_STATUS_OK;
 }
 
@@ -280,6 +281,7 @@ void GDExtensionManager::_bind_methods() {
 	BIND_ENUM_CONSTANT(LOAD_STATUS_NOT_LOADED);
 	BIND_ENUM_CONSTANT(LOAD_STATUS_NEEDS_RESTART);
 
+	ADD_SIGNAL(MethodInfo("extension_loaded"));
 	ADD_SIGNAL(MethodInfo("extensions_reloaded"));
 }
 
