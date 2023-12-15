@@ -48,10 +48,10 @@
 #include "drivers/gles3/rasterizer_gles3.h"
 #endif
 
-String DisplayServerWayland::_get_app_id_from_context(Context context) {
+String DisplayServerWayland::_get_app_id_from_context(Context p_context) {
 	String app_id;
 
-	switch (context) {
+	switch (p_context) {
 		case CONTEXT_EDITOR: {
 			app_id = "org.godotengine.Editor";
 		} break;
@@ -94,10 +94,10 @@ void DisplayServerWayland::_dispatch_input_event(const Ref<InputEvent> &p_event)
 	}
 }
 
-void DisplayServerWayland::_resize_window(Size2i size) {
+void DisplayServerWayland::_resize_window(const Size2i &p_size) {
 	WindowData &wd = main_window;
 
-	wd.rect.size = size;
+	wd.rect.size = p_size;
 
 #ifdef VULKAN_ENABLED
 	if (wd.visible && context_vulkan) {

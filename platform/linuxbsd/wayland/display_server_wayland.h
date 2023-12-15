@@ -83,11 +83,11 @@ class DisplayServerWayland : public DisplayServer {
 		// Flags whether we have allocated a buffer through the video drivers.
 		bool visible = false;
 
-		DisplayServer::VSyncMode vsync_mode;
+		DisplayServer::VSyncMode vsync_mode = VSYNC_ENABLED;
 
-		uint32_t flags;
+		uint32_t flags = 0;
 
-		DisplayServer::WindowMode mode;
+		DisplayServer::WindowMode mode = WINDOW_MODE_WINDOWED;
 
 		Callable rect_changed_callback;
 		Callable window_event_callback;
@@ -136,14 +136,14 @@ class DisplayServerWayland : public DisplayServer {
 	FreeDesktopScreenSaver *screensaver = nullptr;
 	bool screensaver_inhibited = false;
 #endif
-	static String _get_app_id_from_context(Context context);
+	static String _get_app_id_from_context(Context p_context);
 
 	void _send_window_event(WindowEvent p_event);
 
 	static void dispatch_input_events(const Ref<InputEvent> &p_event);
 	void _dispatch_input_event(const Ref<InputEvent> &p_event);
 
-	void _resize_window(Size2i size);
+	void _resize_window(const Size2i &p_size);
 
 	virtual void _show_window();
 

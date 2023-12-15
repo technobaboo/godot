@@ -852,7 +852,7 @@ public:
 	static double window_state_get_scale_factor(WindowState *p_ws);
 	static void window_state_update_size(WindowState *p_ws, int p_width, int p_height);
 
-	static Vector2i scale_vector2i(Vector2i p_vector, double p_amount);
+	static Vector2i scale_vector2i(const Vector2i &p_vector, double p_amount);
 
 	void push_message(Ref<Message> message);
 	bool has_message();
@@ -862,16 +862,16 @@ public:
 
 	struct wl_surface *window_get_wl_surface(DisplayServer::WindowID p_window_id) const;
 
-	void window_set_max_size(DisplayServer::WindowID p_window_id, Size2i p_size);
-	void window_set_min_size(DisplayServer::WindowID p_window_id, Size2i p_size);
+	void window_set_max_size(DisplayServer::WindowID p_window_id, const Size2i &p_size);
+	void window_set_min_size(DisplayServer::WindowID p_window_id, const Size2i &p_size);
 
 	bool window_can_set_mode(DisplayServer::WindowID p_window_id, DisplayServer::WindowMode p_window_mode) const;
 	void window_try_set_mode(DisplayServer::WindowID p_window_id, DisplayServer::WindowMode p_window_mode);
 	DisplayServer::WindowMode window_get_mode(DisplayServer::WindowID p_window_id) const;
 
 	void window_set_borderless(DisplayServer::WindowID p_window_id, bool p_borderless);
-	void window_set_title(DisplayServer::WindowID p_window_id, String p_title);
-	void window_set_app_id(DisplayServer::WindowID p_window_id, String p_app_id);
+	void window_set_title(DisplayServer::WindowID p_window_id, const String &p_title);
+	void window_set_app_id(DisplayServer::WindowID p_window_id, const String &p_app_id);
 
 	bool window_is_focused(DisplayServer::WindowID p_window_id);
 
@@ -886,7 +886,7 @@ public:
 	int get_screen_count() const;
 
 	void pointer_set_constraint(PointerConstraint p_constraint);
-	void pointer_set_hint(Point2i p_hint);
+	void pointer_set_hint(const Point2i &p_hint);
 	PointerConstraint pointer_get_constraint() const;
 	DisplayServer::WindowID pointer_get_pointed_window_id() const;
 	BitField<MouseButtonMask> pointer_get_button_mask() const;
@@ -895,7 +895,7 @@ public:
 	void cursor_set_shape(DisplayServer::CursorShape p_cursor_shape);
 
 	void cursor_set_custom_shape(DisplayServer::CursorShape p_cursor_shape);
-	void cursor_shape_set_custom_image(DisplayServer::CursorShape p_cursor_shape, Ref<Image> p_image, Point2i p_hotspot);
+	void cursor_shape_set_custom_image(DisplayServer::CursorShape p_cursor_shape, Ref<Image> p_image, const Point2i &p_hotspot);
 	void cursor_shape_clear_custom_image(DisplayServer::CursorShape p_cursor_shape);
 
 	int keyboard_get_layout_count() const;
@@ -907,16 +907,16 @@ public:
 
 	void keyboard_echo_keys();
 
-	bool selection_has_mime(String p_mime) const;
-	Vector<uint8_t> selection_get_mime(String p_mime) const;
+	bool selection_has_mime(const String &p_mime) const;
+	Vector<uint8_t> selection_get_mime(const String &p_mime) const;
 
-	void selection_set_text(String p_text);
+	void selection_set_text(const String &p_text);
 
 	// Optional primary support - requires wp_primary_selection_unstable_v1
-	bool primary_has_mime(String p_mime) const;
-	Vector<uint8_t> primary_get_mime(String p_mime) const;
+	bool primary_has_mime(const String &p_mime) const;
+	Vector<uint8_t> primary_get_mime(const String &p_mime) const;
 
-	void primary_set_text(String p_text);
+	void primary_set_text(const String &p_text);
 
 	void set_frame();
 	bool get_reset_frame();

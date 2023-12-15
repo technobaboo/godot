@@ -2721,12 +2721,12 @@ void WaylandThread::window_state_update_size(WindowState *p_ws, int p_width, int
 
 // Scales a vector according to wp_fractional_scale's rules, where coordinates
 // must be scaled with away from zero half-rounding.
-Vector2i WaylandThread::scale_vector2i(Vector2i p_vector, double p_amount) {
+Vector2i WaylandThread::scale_vector2i(const Vector2i &p_vector, double p_amount) {
 	// This snippet is tiny, I know, but this is done a lot.
-	p_vector.x = round(p_vector.x * p_amount);
-	p_vector.y = round(p_vector.y * p_amount);
+	int x = round(p_vector.x * p_amount);
+	int y = round(p_vector.y * p_amount);
 
-	return p_vector;
+	return Vector2i(x, y);
 }
 
 void WaylandThread::seat_state_unlock_pointer(SeatState *p_ss) {
@@ -2984,7 +2984,7 @@ struct wl_surface *WaylandThread::window_get_wl_surface(DisplayServer::WindowID 
 	return ws.wl_surface;
 }
 
-void WaylandThread::window_set_max_size(DisplayServer::WindowID p_window_id, Size2i p_size) {
+void WaylandThread::window_set_max_size(DisplayServer::WindowID p_window_id, const Size2i &p_size) {
 	// TODO: Use window IDs for multiwindow support.
 	WindowState &ws = main_window;
 
@@ -3003,7 +3003,7 @@ void WaylandThread::window_set_max_size(DisplayServer::WindowID p_window_id, Siz
 #endif
 }
 
-void WaylandThread::window_set_min_size(DisplayServer::WindowID p_window_id, Size2i p_size) {
+void WaylandThread::window_set_min_size(DisplayServer::WindowID p_window_id, const Size2i &p_size) {
 	// TODO: Use window IDs for multiwindow support.
 	WindowState &ws = main_window;
 
@@ -3225,7 +3225,7 @@ void WaylandThread::window_set_borderless(DisplayServer::WindowID p_window_id, b
 #endif // LIBDECOR_ENABLED
 }
 
-void WaylandThread::window_set_title(DisplayServer::WindowID p_window_id, String p_title) {
+void WaylandThread::window_set_title(DisplayServer::WindowID p_window_id, const String &p_title) {
 	// TODO: Use window IDs for multiwindow support.
 	WindowState &ws = main_window;
 
@@ -3240,7 +3240,7 @@ void WaylandThread::window_set_title(DisplayServer::WindowID p_window_id, String
 	}
 }
 
-void WaylandThread::window_set_app_id(DisplayServer::WindowID p_window_id, String p_app_id) {
+void WaylandThread::window_set_app_id(DisplayServer::WindowID p_window_id, const String &p_app_id) {
 	// TODO: Use window IDs for multiwindow support.
 	WindowState &ws = main_window;
 
@@ -3340,7 +3340,7 @@ void WaylandThread::pointer_set_constraint(PointerConstraint p_constraint) {
 	pointer_constraint = p_constraint;
 }
 
-void WaylandThread::pointer_set_hint(Point2i p_hint) {
+void WaylandThread::pointer_set_hint(const Point2i &p_hint) {
 	SeatState *ss = wl_seat_get_seat_state(wl_seat_current);
 	if (!ss) {
 		return;
@@ -3348,18 +3348,21 @@ void WaylandThread::pointer_set_hint(Point2i p_hint) {
 
 	WindowState *ws = wl_surface_get_window_state(ss->pointed_surface);
 
+	int hint_x = 0;
+	int hint_y = 0;
+
 	if (ws) {
 		// NOTE: It looks like it's not really recommended to convert from
 		// "godot-space" to "wayland-space" and in general I received mixed feelings
 		// discussing about this. I'm not really sure about the maths behind this but,
 		// oh well, we're setting a cursor hint. ¯\_(ツ)_/¯
 		// See: https://oftc.irclog.whitequark.org/wayland/2023-08-23#1692756914-1692816818
-		p_hint.x = round(p_hint.x / window_state_get_scale_factor(ws));
-		p_hint.y = round(p_hint.y / window_state_get_scale_factor(ws));
+		hint_x = round(p_hint.x / window_state_get_scale_factor(ws));
+		hint_y = round(p_hint.y / window_state_get_scale_factor(ws));
 	}
 
 	if (ss) {
-		seat_state_set_hint(ss, p_hint.x, p_hint.y);
+		seat_state_set_hint(ss, hint_x, hint_y);
 	}
 }
 
@@ -3532,7 +3535,7 @@ void WaylandThread::cursor_set_custom_shape(DisplayServer::CursorShape p_cursor_
 	last_cursor_shape = p_cursor_shape;
 }
 
-void WaylandThread::cursor_shape_set_custom_image(DisplayServer::CursorShape p_cursor_shape, Ref<Image> p_image, Point2i p_hotspot) {
+void WaylandThread::cursor_shape_set_custom_image(DisplayServer::CursorShape p_cursor_shape, Ref<Image> p_image, const Point2i &p_hotspot) {
 	ERR_FAIL_COND(!p_image.is_valid());
 
 	Size2i image_size = p_image->get_size();
@@ -3662,7 +3665,7 @@ void WaylandThread::keyboard_echo_keys() {
 	}
 }
 
-void WaylandThread::selection_set_text(String p_text) {
+void WaylandThread::selection_set_text(const String &p_text) {
 	SeatState *ss = wl_seat_get_seat_state(wl_seat_current);
 
 	if (registry.wl_data_device_manager == nullptr) {
@@ -3695,7 +3698,7 @@ void WaylandThread::selection_set_text(String p_text) {
 	wl_display_roundtrip(wl_display);
 }
 
-bool WaylandThread::selection_has_mime(String p_mime) const {
+bool WaylandThread::selection_has_mime(const String &p_mime) const {
 	SeatState *ss = wl_seat_get_seat_state(wl_seat_current);
 
 	if (ss == nullptr) {
@@ -3711,7 +3714,7 @@ bool WaylandThread::selection_has_mime(String p_mime) const {
 	return os->mime_types.has(p_mime);
 }
 
-Vector<uint8_t> WaylandThread::selection_get_mime(String p_mime) const {
+Vector<uint8_t> WaylandThread::selection_get_mime(const String &p_mime) const {
 	SeatState *ss = wl_seat_get_seat_state(wl_seat_current);
 	if (ss == nullptr) {
 		DEBUG_LOG_WAYLAND_THREAD("Couldn't get selection, current seat not set.");
@@ -3738,7 +3741,7 @@ Vector<uint8_t> WaylandThread::selection_get_mime(String p_mime) const {
 	return _wl_data_offer_read(wl_display, p_mime.utf8(), ss->wl_data_offer_selection);
 }
 
-bool WaylandThread::primary_has_mime(String p_mime) const {
+bool WaylandThread::primary_has_mime(const String &p_mime) const {
 	SeatState *ss = wl_seat_get_seat_state(wl_seat_current);
 
 	if (ss == nullptr) {
@@ -3754,7 +3757,7 @@ bool WaylandThread::primary_has_mime(String p_mime) const {
 	return os->mime_types.has(p_mime);
 }
 
-Vector<uint8_t> WaylandThread::primary_get_mime(String p_mime) const {
+Vector<uint8_t> WaylandThread::primary_get_mime(const String &p_mime) const {
 	SeatState *ss = wl_seat_get_seat_state(wl_seat_current);
 	if (ss == nullptr) {
 		DEBUG_LOG_WAYLAND_THREAD("Couldn't get primary, current seat not set.");
@@ -3781,7 +3784,7 @@ Vector<uint8_t> WaylandThread::primary_get_mime(String p_mime) const {
 	return _wp_primary_selection_offer_read(wl_display, p_mime.utf8(), ss->wp_primary_selection_offer);
 }
 
-void WaylandThread::primary_set_text(String p_text) {
+void WaylandThread::primary_set_text(const String &p_text) {
 	SeatState *ss = wl_seat_get_seat_state(wl_seat_current);
 
 	if (registry.wp_primary_selection_device_manager == nullptr) {
