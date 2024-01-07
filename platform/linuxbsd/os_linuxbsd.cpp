@@ -1174,12 +1174,12 @@ OS_LinuxBSD::OS_LinuxBSD() {
 	AudioDriverManager::add_driver(&driver_alsa);
 #endif
 
-#ifdef WAYLAND_ENABLED
-	DisplayServerWayland::register_wayland_driver();
-#endif
-
 #ifdef X11_ENABLED
 	DisplayServerX11::register_x11_driver();
+#endif
+
+#ifdef WAYLAND_ENABLED
+	DisplayServerWayland::register_wayland_driver();
 #endif
 
 #ifdef FONTCONFIG_ENABLED
