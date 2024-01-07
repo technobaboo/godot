@@ -2093,21 +2093,37 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	/* Determine audio and video drivers */
 
+	GLOBAL_DEF_RST_NOVAL("display/display_server/driver", "default");
+	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.windows", PROPERTY_HINT_ENUM, "default,windows,headless"), "default");
+	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.linuxbsd", PROPERTY_HINT_ENUM, "default,x11,wayland,headless"), "default");
+	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.android", PROPERTY_HINT_ENUM, "default,android,headless"), "default");
+	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.ios", PROPERTY_HINT_ENUM, "default,iOS,headless"), "default");
+	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.macos", PROPERTY_HINT_ENUM, "default,macos,headless"), "default");
+
+	if (display_driver.is_empty()) {
+		display_driver = GLOBAL_GET("display/display_server/driver");
+	}
+
 	// Display driver, e.g. X11, Wayland.
 	// Make sure that headless is the last one, which it is assumed to be by design.
 	DEV_ASSERT(NULL_DISPLAY_DRIVER == DisplayServer::get_create_function_name(DisplayServer::get_create_function_count() - 1));
-	for (int i = 0; i < DisplayServer::get_create_function_count(); i++) {
-		String name = DisplayServer::get_create_function_name(i);
-		if (display_driver == name) {
-			display_driver_idx = i;
-			break;
-		}
-	}
 
-	if (display_driver_idx < 0) {
-		// If the requested driver wasn't found, pick the first entry.
-		// If all else failed it would be the headless server.
+	if (display_driver == "default") {
 		display_driver_idx = 0;
+	} else {
+		for (int i = 0; i < DisplayServer::get_create_function_count(); i++) {
+			String name = DisplayServer::get_create_function_name(i);
+			if (display_driver == name) {
+				display_driver_idx = i;
+				break;
+			}
+		}
+
+		if (display_driver_idx < 0) {
+			// If the requested driver wasn't found, pick the first entry.
+			// If all else failed it would be the headless server.
+			display_driver_idx = 0;
+		}
 	}
 
 	// Store this in a globally accessible place, so we can retrieve the rendering drivers
