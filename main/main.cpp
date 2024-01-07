@@ -2094,11 +2094,11 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 	/* Determine audio and video drivers */
 
 	GLOBAL_DEF_RST_NOVAL("display/display_server/driver", "default");
-	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.windows", PROPERTY_HINT_ENUM, "default,windows,headless"), "default");
-	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.linuxbsd", PROPERTY_HINT_ENUM, "default,x11,wayland,headless"), "default");
-	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.android", PROPERTY_HINT_ENUM, "default,android,headless"), "default");
-	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.ios", PROPERTY_HINT_ENUM, "default,iOS,headless"), "default");
-	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.macos", PROPERTY_HINT_ENUM, "default,macos,headless"), "default");
+	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.windows", PROPERTY_HINT_ENUM_SUGGESTION, "default,windows,headless"), "default");
+	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.linuxbsd", PROPERTY_HINT_ENUM_SUGGESTION, "default,x11,wayland,headless"), "default");
+	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.android", PROPERTY_HINT_ENUM_SUGGESTION, "default,android,headless"), "default");
+	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.ios", PROPERTY_HINT_ENUM_SUGGESTION, "default,iOS,headless"), "default");
+	GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::STRING, "display/display_server/driver.macos", PROPERTY_HINT_ENUM_SUGGESTION, "default,macos,headless"), "default");
 
 	if (display_driver.is_empty()) {
 		display_driver = GLOBAL_GET("display/display_server/driver");
