@@ -68,7 +68,12 @@ private:
 #elif defined(ANDROID_ENABLED)
 	static XrGraphicsBindingOpenGLESAndroidKHR graphics_binding_gl;
 #else // Linux/X11
-	static XrGraphicsBindingOpenGLXlibKHR graphics_binding_gl;
+#if X11_ENABLED
+	static XrGraphicsBindingOpenGLXlibKHR graphics_binding_gl_x11;
+#endif
+#if WAYLAND_ENABLED
+	static XrGraphicsBindingOpenGLWaylandKHR graphics_binding_gl_wayland;
+#endif
 #endif
 
 	struct SwapchainGraphicsData {

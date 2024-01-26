@@ -133,8 +133,13 @@ bool OpenXROpenGLExtension::check_graphics_api_support(XrVersion p_desired_versi
 XrGraphicsBindingOpenGLWin32KHR OpenXROpenGLExtension::graphics_binding_gl;
 #elif ANDROID_ENABLED
 XrGraphicsBindingOpenGLESAndroidKHR OpenXROpenGLExtension::graphics_binding_gl;
-#elif X11_ENABLED
-XrGraphicsBindingOpenGLXlibKHR OpenXROpenGLExtension::graphics_binding_gl;
+#else
+#if X11_ENABLED
+XrGraphicsBindingOpenGLXlibKHR OpenXROpenGLExtension::graphics_binding_gl_x11;
+#endif
+#if WAYLAND_ENABLED
+XrGraphicsBindingOpenGLWaylandKHR OpenXROpenGLExtension::graphics_binding_gl_wayland;
+#endif
 #endif
 
 void *OpenXROpenGLExtension::set_session_create_and_get_next_pointer(void *p_next_pointer) {
@@ -146,10 +151,6 @@ void *OpenXROpenGLExtension::set_session_create_and_get_next_pointer(void *p_nex
 	}
 
 	DisplayServer *display_server = DisplayServer::get_singleton();
-
-#ifdef WAYLAND_ENABLED
-	ERR_FAIL_COND_V_MSG(display_server->get_name() == "Wayland", p_next_pointer, "OpenXR is not yet supported on OpenGL Wayland.");
-#endif
 
 #ifdef WIN32
 	graphics_binding_gl.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR,
@@ -164,24 +165,42 @@ void *OpenXROpenGLExtension::set_session_create_and_get_next_pointer(void *p_nex
 	graphics_binding_gl.display = (void *)display_server->window_get_native_handle(DisplayServer::DISPLAY_HANDLE);
 	graphics_binding_gl.config = (EGLConfig)0; // https://github.com/KhronosGroup/OpenXR-SDK-Source/blob/master/src/tests/hello_xr/graphicsplugin_opengles.cpp#L122
 	graphics_binding_gl.context = (void *)display_server->window_get_native_handle(DisplayServer::OPENGL_CONTEXT);
-#elif X11_ENABLED
-	graphics_binding_gl.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR;
-	graphics_binding_gl.next = p_next_pointer;
+#elif LINUXBSD_ENABLED
+	if (display_server->get_name() == "Wayland") {
+#if WAYLAND_ENABLED
+		graphics_binding_gl_wayland.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_WAYLAND_KHR;
+		graphics_binding_gl_wayland.next = p_next_pointer;
 
-	void *display_handle = (void *)display_server->window_get_native_handle(DisplayServer::DISPLAY_HANDLE);
-	void *glxcontext_handle = (void *)display_server->window_get_native_handle(DisplayServer::OPENGL_CONTEXT);
-	void *glxdrawable_handle = (void *)display_server->window_get_native_handle(DisplayServer::WINDOW_HANDLE);
+		void *display_handle = (void *)display_server->window_get_native_handle(DisplayServer::DISPLAY_HANDLE);
 
-	graphics_binding_gl.xDisplay = (Display *)display_handle;
-	graphics_binding_gl.glxContext = (GLXContext)glxcontext_handle;
-	graphics_binding_gl.glxDrawable = (GLXDrawable)glxdrawable_handle;
-
-	// spec says to use proper values but runtimes don't care
-	graphics_binding_gl.visualid = 0;
-	graphics_binding_gl.glxFBConfig = 0;
+		graphics_binding_gl_wayland.display = (wl_display *)display_handle;
+		return &graphics_binding_gl_wayland;
 #endif
+	} else {
+#if X11_ENABLED
+		graphics_binding_gl_x11.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR;
+		graphics_binding_gl_x11.next = p_next_pointer;
 
+		void *display_handle = (void *)display_server->window_get_native_handle(DisplayServer::DISPLAY_HANDLE);
+		void *glxcontext_handle = (void *)display_server->window_get_native_handle(DisplayServer::OPENGL_CONTEXT);
+		void *glxdrawable_handle = (void *)display_server->window_get_native_handle(DisplayServer::WINDOW_HANDLE);
+
+		graphics_binding_gl_x11.xDisplay = (Display *)display_handle;
+		graphics_binding_gl_x11.glxContext = (GLXContext)glxcontext_handle;
+		graphics_binding_gl_x11.glxDrawable = (GLXDrawable)glxdrawable_handle;
+
+		// spec says to use proper values but runtimes don't care
+		graphics_binding_gl_x11.visualid = 0;
+		graphics_binding_gl_x11.glxFBConfig = 0;
+		return &graphics_binding_gl_x11;
+#endif
+	}
+#endif
+#ifndef X11_ENABLED
+#ifndef WAYLAND_ENABLED
 	return &graphics_binding_gl;
+#endif
+#endif
 }
 
 void OpenXROpenGLExtension::get_usable_swapchain_formats(Vector<int64_t> &p_usable_swap_chains) {
